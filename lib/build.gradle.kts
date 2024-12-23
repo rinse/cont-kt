@@ -8,9 +8,11 @@ repositories {
 }
 
 dependencies {
+    api(libs.slf4j)
     implementation(libs.coroutines.core)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.logback)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
