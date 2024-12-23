@@ -5,101 +5,64 @@ import org.junit.jupiter.api.Test
 
 class ShiftResetScopeTest {
     @Test
-    fun `test without k, succeeds`() {
+    fun `test for calling k`() {
         runBlocking {
             val actual: String = shiftResetScope {
-                val context = ThrowableContext { message ->
-                    shift { _ ->
-                        "Error! Message: $message"
-                    }
+                val r: String = shift { k ->
+                    k("Call with k")
                 }
-                with(context) {
-                    val r = safeDiv(10, 2)
-                    "Result: $r"
-                }
+                "[INFO] $r"
             }
-            assertEquals(expected = "Result: 5", actual)
+            assertEquals(expected = "[INFO] Call with k", actual)
             println("Completed: $actual")
         }
     }
 
     @Test
-    fun `test without k, exception thrown`() {
+    fun `test for not calling k`() {
         runBlocking {
             val actual: String = shiftResetScope {
-                val context = ThrowableContext { message ->
-                    shift { _ ->
-                        "Error! Message: $message"
-                    }
+                val r: Nothing = shift<Nothing> { k ->
+                    "Returning a value" // not call k
                 }
-                with(context) {
-                    val r = safeDiv(10, 0)
-                    "Result: $r"
-                }
+                "[INFO] $r"
             }
-            assertEquals(expected = "Error! Message: Zero Division", actual)
+            assertEquals(expected = "Returning a value", actual)
             println("Completed: $actual")
         }
     }
 
     @Test
-    fun `test with k, succeeds`() {
+    fun `test for not calling k 2`() {
         runBlocking {
-            val actual: Int = shiftResetScope {
-                val context = ThrowableContext2 { message ->
-                    shift { _ ->
-                        "Error! Message: $message"
-                        10000
+            val actual: String = shiftResetScope {
+                val r: String = reset {
+                    val r = shift<String> { k ->
+                        "Returning a value" // not call k
                     }
+                    "$r, this is skipped"
                 }
-                with(context) {
-                    safeDiv2(10, 2)
-                }
+                "[INFO] $r"
             }
-            assertEquals(expected = 5, actual)
+            assertEquals(expected = "[INFO] Returning a value", actual)
             println("Completed: $actual")
         }
     }
 
     @Test
-    fun `test with k, exception thrown`() {
+    fun `test with examples 1`() {
         runBlocking {
             val actual: Int = shiftResetScope {
-                val context = ThrowableContext2 { message ->
-                    shift { _ ->
-                        "Error! Message: $message"
-                        10000
+                val a = reset {
+                    val b = shift { k ->
+                        k(2) * 3 // [* 3] is skipped
                     }
+                    b * 5
                 }
-                with(context) {
-                    safeDiv2(10, 0)
-                }
+                a * 7
             }
-            assertEquals(expected = 10000, actual)
+            assertEquals(expected = 70, actual)
             println("Completed: $actual")
         }
     }
-}
-
-fun interface ThrowableContext {
-    suspend fun throwException(message: String): Nothing
-}
-
-suspend fun ThrowableContext.safeDiv(n: Int, m: Int): Int {
-    if (m == 0) {
-        throwException("Zero Division")
-    }
-    return n / m
-}
-
-
-fun interface ThrowableContext2 {
-    suspend fun throwException(message: String): Int
-}
-
-suspend fun ThrowableContext2.safeDiv2(n: Int, m: Int): Int {
-    if (m == 0) {
-        return throwException("Zero Division")
-    }
-    return n / m
 }
